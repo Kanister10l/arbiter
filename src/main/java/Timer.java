@@ -13,7 +13,7 @@ public class Timer implements Runnable{
         this.eventTarget = eventTarget;
         this.timeout = timeout;
         milis = 0;
-        paused = false;
+        paused = true;
     }
 
     public void run() {

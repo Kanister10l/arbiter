@@ -22,6 +22,9 @@ public class Session implements Runnable, CustomEvent{
     private double blackSpotChance;
     private Timer timer;
     private Thread timerTh;
+    private String pointMessage;
+    private String lastProgram;
+    private String winner;
 
     public Session(String startScriptA, String startScriptB, int gridSize, double blackSpotChance){
         rt = Runtime.getRuntime();
@@ -32,6 +35,7 @@ public class Session implements Runnable, CustomEvent{
         configMsg = "";
         random = new Random();
         this.blackSpotChance = blackSpotChance;
+        winner = null;
     }
 
     public void run() {
@@ -48,24 +52,42 @@ public class Session implements Runnable, CustomEvent{
 
             timer = new Timer(this, 1000);
             timerTh = new Thread(timer);
-
-            outputA.write(configMsg);
-            outputA.newLine();
-
-            timer.resume();
             timerTh.start();
 
+            sendMsg(outputA, configMsg);
+
             listenToInitMsg(inputA, "A");
-
             timer.pause();
+            lastProgram = "A";
 
-            outputB.write(configMsg);
-            outputB.newLine();
-
-            timer.reset();
-            timer.resume();
+            sendMsg(outputB, configMsg);
 
             listenToInitMsg(inputB, "B");
+            timer.pause();
+            lastProgram = "B";
+
+            timerTh.interrupt();
+            timer = new Timer(this, 500);
+            timerTh = new Thread(timer);
+            timerTh.start();
+
+            sendMsg(outputA, "start");
+            pointMessage = waitForResponse(inputA, "A");
+            parseMsg(pointMessage, "A");
+            lastProgram = "A";
+            sendMsg(outputA, pointMessage);
+            pointMessage = waitForResponse(inputA, "B");
+            parseMsg(pointMessage, "B");
+            lastProgram = "B";
+
+            while(grid.getFree() > 0){
+                nextTick(inputA, outputA, "A");
+                if (grid.getFree() > 0){
+                    nextTick(inputB, outputB, "B");
+                }
+            }
+            setWinner(lastProgram);
+
 
             timerTh.interrupt();
             processA.destroy();
@@ -112,5 +134,56 @@ public class Session implements Runnable, CustomEvent{
             }
             Thread.sleep(30);
         }
+    }
+
+    private void sendMsg(BufferedWriter output, String msg) throws IOException {
+        output.write(msg);
+        output.newLine();
+        timer.reset();
+        timer.resume();
+    }
+
+    private String waitForResponse(BufferedReader input, String program) throws IOException, InterruptedException {
+        while(true){
+            if (errorCode != 0) {
+                System.out.println("Error in program " + program + ": " + errorCode); //TODO: Handle errors properly
+                break;
+            }
+            else if (input.ready()){
+                timer.pause();
+                return input.readLine().toLowerCase();
+            }
+            Thread.sleep(30);
+        }
+        return "Error";
+    }
+
+    private Block parseMsg(String msg, String program){
+        String[] firstSplit = msg.split("_");
+        if (firstSplit.length == 2){
+            String[] firstPoint = firstSplit[0].split("x");
+            String[] secondPoint = firstSplit[1].split("x");
+            return new Block(Integer.parseInt(firstPoint[0]), Integer.parseInt(firstPoint[1]), Integer.parseInt(secondPoint[0]), Integer.parseInt(secondPoint[0]));
+        }
+        else{
+            errorCode = 487;
+            System.out.println("Error in program " + program + ": " + errorCode); //TODO: Handle errors properly
+        }
+        return null;
+    }
+
+    private void nextTick(BufferedReader input, BufferedWriter output, String program) throws IOException, InterruptedException {
+        sendMsg(output, pointMessage);
+        pointMessage = waitForResponse(input, program);
+        parseMsg(pointMessage, program);
+        lastProgram = program;
+    }
+
+    private void setWinner(String winner){
+        this.winner = winner;
+    }
+
+    public String getWinner(){
+        return winner;
     }
 }

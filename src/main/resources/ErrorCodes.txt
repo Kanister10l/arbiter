@@ -1,0 +1,3 @@
+487 - Move not valid
+501 - Wrong Process Response
+504 - Process Timed out
