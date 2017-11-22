@@ -1,52 +1,55 @@
+import Exceptions.MoveNotValidException;
+
 /**
  * Created on 06.11.2017 by Kamil Samul for usage in arbiter.
  */
 public class Grid {
-    private byte[][] grid;
-    private byte[][] freeSpace;
+    private int[][] grid;
+    private int[][] freeSpace;
     private int size;
     private int free;
 
     public Grid(int size){
-        grid = new byte[size][size];
-        freeSpace = new byte [size][size];
+        grid = new int[size][size];
+        freeSpace = new int[size][size];
         free = 0;
+        this.size = size;
         prepareFreeSpace();
     }
 
-    public void setGridPoint(int x, int y, byte state){
+    public void setGridPoint(int x, int y, int state){
         grid[x][y] = state;
         if (freeSpace[x][y] > 0)
             free--;
         if (x - 1 >= 0) {
             freeSpace[x - 1][y]--;
-            if (freeSpace[x - 1][y] == 0)
+            if (freeSpace[x - 1][y] == 0 && grid[x - 1][y] == 0)
                 free--;
         }
         if (x + 1 < size) {
             freeSpace[x + 1][y]--;
-            if (freeSpace[x + 1][y] == 0)
+            if (freeSpace[x + 1][y] == 0 && grid[x + 1][y] == 0)
                 free--;
         }
         if (y - 1 >= 0) {
             freeSpace[x][y - 1]--;
-            if (freeSpace[x][y - 1] == 0)
+            if (freeSpace[x][y - 1] == 0 && grid[x][y - 1] == 0)
                 free--;
         }
         if (y + 1 < size) {
             freeSpace[x][y + 1]--;
-            if (freeSpace[x][y + 1] == 0)
+            if (freeSpace[x][y + 1] == 0 && grid[x][y + 1] == 0)
                 free--;
         }
     }
 
-    public int setGridBlock(Block block, int player){
+    public void setGridBlock(Block block, int player) throws MoveNotValidException {
         if(validateMove(block)){
-            setGridPoint(block.getX1(), block.getY1(), (byte) player);
-            grid[block.getX2()][block.getY2()] = (byte) player;
-            return 0;
+            setGridPoint(block.getX1(), block.getY1(), player);
+            setGridPoint(block.getX2(), block.getY2(), player);
+            return;
         }
-        return 487;
+        throw new MoveNotValidException(String.valueOf(player));
     }
 
     private boolean validateMove(Block block){
@@ -55,7 +58,7 @@ public class Grid {
         return false;
     }
 
-    public byte[][] getGrid() {
+    public int[][] getGrid() {
         return grid;
     }
 
@@ -75,9 +78,9 @@ public class Grid {
             free += 2;
         }
         freeSpace[0][0] = 2;
-        freeSpace[0][size - 1] = 3;
-        freeSpace[size - 1][0] = 3;
-        freeSpace[size - 1][size - 1] = 3;
+        freeSpace[0][size - 1] = 2;
+        freeSpace[size - 1][0] = 2;
+        freeSpace[size - 1][size - 1] = 2;
         free += 4;
     }
 
