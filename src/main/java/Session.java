@@ -58,6 +58,7 @@ public class Session implements Runnable, CustomEvent{
 
     public void run() {
         try {
+            prepareGrid();
             processA = rt.exec(startScriptA);
             processB = rt.exec(startScriptB);
 
@@ -66,7 +67,6 @@ public class Session implements Runnable, CustomEvent{
             outputA = new BufferedWriter(new OutputStreamWriter(processA.getOutputStream()));
             outputB = new BufferedWriter(new OutputStreamWriter(processB.getOutputStream()));
 
-            prepareGrid();
             for (int i = 0; i < grid.getGrid().length; i++) {
                 System.arraycopy(grid.getGrid()[i], 0, begining[i], 0, grid.getGrid().length);
             }
@@ -189,17 +189,26 @@ public class Session implements Runnable, CustomEvent{
     }
 
     private void prepareGrid(){
-        configMsg += gridSize;
+        StringBuilder output = new StringBuilder();
+        StringBuilder segment = new StringBuilder();
+        output.append(gridSize);
         if (blackSpotChance != 0) {
             for (int i = 0; i < gridSize; i++) {
                 for (int j = 0; j < gridSize; j++) {
                     if (random.nextDouble() < blackSpotChance){
                         grid.setGridPoint(i, j, 1);
-                        configMsg += "_" + i + j;
+                        segment.setLength(0);
+                        segment.append("_");
+                        segment.append(i);
+                        segment.append("x");
+                        segment.append(j);
+                        output.append(segment.toString());
                     }
                 }
             }
         }
+        configMsg = output.toString();
+        System.out.println(configMsg);
     }
 
     private void listenToInitMsg(BufferedReader input, int program) throws IOException, InterruptedException, ProcessTimedOutException, WrongProcessResponseException, UnknownException {

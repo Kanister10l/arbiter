@@ -53,9 +53,7 @@ public class Grid {
     }
 
     private boolean validateMove(Block block){
-        if(grid[block.getX1()][block.getY1()] == 0 && grid[block.getX2()][block.getY2()] == 0)
-            return true;
-        return false;
+        return grid[block.getX1()][block.getY1()] == 0 && grid[block.getX2()][block.getY2()] == 0;
     }
 
     public int[][] getGrid() {
