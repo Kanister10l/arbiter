@@ -234,6 +234,7 @@ public class Session implements Runnable, CustomEvent{
     private void sendMsg(BufferedWriter output, String msg) throws IOException {
         output.write(msg);
         output.newLine();
+        output.flush();
         timer.reset();
         timer.resume();
     }
