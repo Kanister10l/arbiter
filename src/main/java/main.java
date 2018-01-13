@@ -36,13 +36,16 @@ public class main {
             for (int i = 0; i < dirs.length; i++) {
                 threads = new ArrayList<Thread>(dirs.length - i - 1);
                 for (int j = i + 1; j < dirs.length; j++) {
-                    threads.add(new Thread(new Session(dirs[i], dirs[j], startScripts[i], startScripts[j], getRandomNumberInt(), getRandomNumberDouble())));
+                    if (args.length == 0)
+                        threads.add(new Thread(new Session(dirs[i], dirs[j], startScripts[i], startScripts[j], getRandomNumberInt(), getRandomNumberDouble(), o)));
+                    else
+                        threads.add(new Thread(new Session(dirs[i], dirs[j], startScripts[i], startScripts[j], args[0], o)));
                     threads.get(j - i - 1).start();
                 }
                 do {
                     alive = false;
                     for (int j = 0; j < threads.size(); j++) {
-                        if (threads.get(i).isAlive()) {
+                        if (threads.get(j).isAlive()) {
                             alive = true;
                         }
                         try {

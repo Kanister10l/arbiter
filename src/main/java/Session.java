@@ -5,6 +5,7 @@ import Exceptions.WrongProcessResponseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Random;
 
 /**
@@ -38,8 +39,12 @@ public class Session implements Runnable, CustomEvent{
     private ObjectMapper mapper;
     private BufferedWriter errorWriter;
     private int[][] begining;
+    private String configFile;
+    private int runN;
+    private int mode;
+    private String[] configArray;
 
-    public Session(String playerNameA, String playerNameB,String startScriptA, String startScriptB, int gridSize, double blackSpotChance){
+    public Session(String playerNameA, String playerNameB,String startScriptA, String startScriptB, int gridSize, double blackSpotChance, int runN){
         rt = Runtime.getRuntime();
         this.playerNameA = playerNameA;
         this.playerNameB = playerNameB;
@@ -54,13 +59,49 @@ public class Session implements Runnable, CustomEvent{
         dump = new GameDump(playerNameA, playerNameB, gridSize);
         mapper = new ObjectMapper();
         begining = new int[gridSize][gridSize];
+        mode = 1;
+        this.runN = runN;
+    }
+
+    public Session(String playerNameA, String playerNameB,String startScriptA, String startScriptB, String configFile, int runN){
+        rt = Runtime.getRuntime();
+        this.playerNameA = playerNameA;
+        this.playerNameB = playerNameB;
+        this.startScriptA = startScriptA;
+        this.startScriptB = startScriptB;
+        configMsg = "";
+        random = new Random();
+        winner = 0;
+        mapper = new ObjectMapper();
+        mode = 2;
+        this.configFile = configFile;
+        this.runN = runN;
     }
 
     public void run() {
         try {
-            prepareGrid();
+            if (runN > 0){
+                String tmp = playerNameA;
+                playerNameA = playerNameB;
+                playerNameB = tmp;
+                tmp = startScriptA;
+                startScriptA = startScriptB;
+                startScriptB = tmp;
+            }
+            if (mode == 1)
+                prepareGrid();
+            else{
+                readConfig();
+                grid = new Grid(gridSize);
+                dump = new GameDump(playerNameA, playerNameB, gridSize);
+                begining = new int[gridSize][gridSize];
+                fillGrid();
+
+            }
             processA = rt.exec(startScriptA);
             processB = rt.exec(startScriptB);
+
+            Thread.sleep(3000);
 
             inputA = new BufferedReader(new InputStreamReader(processA.getInputStream()));
             inputB = new BufferedReader(new InputStreamReader(processB.getInputStream()));
@@ -186,6 +227,44 @@ public class Session implements Runnable, CustomEvent{
 
     public void event(int errorCode) {
         this.errorCode = errorCode;
+    }
+
+    private void readConfig(){
+        try {
+            BufferedReader configReader = new BufferedReader(new FileReader(configFile));
+            for (int i = 0; i < runN + 1; i++) {
+                String conf = configReader.readLine();
+                if (runN == i){
+                    configArray = conf.split("_");
+                    gridSize = Integer.parseInt(configArray[0]);
+                }
+            }
+            configReader.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void fillGrid(){
+        StringBuilder output = new StringBuilder();
+        StringBuilder segment = new StringBuilder();
+        output.append(gridSize);
+        for (int i = 1; i < configArray.length; i++) {
+            String[] spotSplit = configArray[i].split("x");
+            int x = Integer.parseInt(spotSplit[0]);
+            int y = Integer.parseInt(spotSplit[1]);
+            grid.setGridPoint(x, y, 1);
+            segment.setLength(0);
+            segment.append("_");
+            segment.append(x);
+            segment.append("x");
+            segment.append(y);
+            output.append(segment.toString());
+        }
+        configMsg = output.toString();
+        System.out.println(configMsg);
     }
 
     private void prepareGrid(){
